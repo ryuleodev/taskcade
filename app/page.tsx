@@ -1,9 +1,16 @@
 import HomeClient from "@/components/HomeClient";
-import { db, rowToTask } from "@/lib/db";
+import { db, rowToTask, rowToStage } from "@/lib/db";
 
 export default async function Home() {
   const result = await db.execute("SELECT * FROM tasks");
-  const tasks = result.rows.map(rowToTask);
+  const stagesResult = await db.execute('SELECT * FROM stages');
+  const tasks = result.rows.map(row => {
+  const task = rowToTask(row);
+    task.stages = stagesResult.rows
+      .map(rowToStage)
+      .filter(stage => stage.taskId === task.id);
+    return task;
+  });
   const totalCount = tasks.length;
   const doneCount = tasks.filter((t) => t.isDone).length;
   const now = new Date();
