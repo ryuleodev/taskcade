@@ -31,7 +31,6 @@ export default async function Home() {
 
   return (
     <HomeClient
-      tasks={tasks}
       dateLabel={now.toLocaleDateString("ja-JP", {
         year: "numeric",
         month: "long",

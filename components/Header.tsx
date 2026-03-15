@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
+  const pathname = usePathname();
+
   return (
     <header className="border-b border-gray-100 bg-brand-primary">
       <div className="max-w-2xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -12,7 +15,11 @@ export default function Header() {
         <nav className="flex gap-6 items-center">
           <Link
             href="/tasks"
-            className="text-sm text-brand-light hover:text-gray-900 transition-colors"
+            className={
+              pathname === "/tasks"
+                ? "text-brand-accent font-semibold"
+                : "text-gray-300 hover:text-white"
+            }
           >
             タスク一覧
           </Link>

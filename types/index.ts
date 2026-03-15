@@ -2,7 +2,7 @@ export type Task = {
     id: number;
     title: string;
     category: string;
-    type: string;
+    type: 'normal' | 'stage';
     note: string;
     dueDate: string | null;
     isDone: boolean;

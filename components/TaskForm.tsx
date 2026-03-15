@@ -2,26 +2,40 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CATEGORIES } from "@/types";
+import { Task, CATEGORIES } from "@/types";
 
-export default function TaskForm() {
+interface Props {
+  initial?: Task;
+}
+
+export default function TaskForm({ initial }: Props) {
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [type, setType] = useState<"normal" | "stage">("normal");
-  const [stages, setStages] = useState<string[]>(["", "", ""]);
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [category, setCategory] = useState(initial?.category ?? "");
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? "");
+  const [type, setType] = useState<"normal" | "stage">(
+    initial?.type ?? "normal",
+  );
+  const [stages, setStages] = useState<string[]>(
+    initial?.stages?.map((s) => s.name) ?? ["", "", ""],
+  );
+
+  const isEditing = !!initial;
 
   const handleSubmit = async () => {
-    if (!title.trim()) return;
-
-    await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, category, dueDate, type, stages }),
-    });
-
-    setTitle("");
+    if (isEditing) {
+      await fetch(`/api/tasks/${initial!.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, category, dueDate, type, stages }),
+      });
+    } else {
+      await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, category, dueDate, type, stages }),
+      });
+    }
     router.push("/tasks");
   };
 
@@ -138,7 +152,7 @@ export default function TaskForm() {
           onClick={handleSubmit}
           className="w-full py-3 rounded-lg bg-brand-primary text-white font-medium hover:opacity-90 transition-opacity"
         >
-          タスクを追加
+          {isEditing ? '変更を保存' : 'タスクを追加'}
         </button>
       </div>
     </div>

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface Props {
-  tasks: Task[];
   dateLabel: string;
   todayTasks: Task[];
   activeTasks: Task[];
@@ -15,7 +14,6 @@ interface Props {
 }
 
 export default function HomeClient({
-  tasks,
   dateLabel,
   todayTasks,
   activeTasks,
@@ -27,6 +25,11 @@ export default function HomeClient({
 
   const handleToggle = async (id: number) => {
     await fetch(`/api/tasks/${id}/complete`, { method: "PATCH" });
+    router.refresh();
+  };
+
+  const handleDelete = async (id: number) => {
+    await fetch(`/api/tasks/${id}`, { method: "DELETE" });
     router.refresh();
   };
 
@@ -49,12 +52,19 @@ export default function HomeClient({
           label="全タスク"
           value={totalCount}
           color="text-gray-700"
+          bg="bg-white"
         />
-        <SummaryCard label="完了" value={doneCount} color="text-green-600" />
+        <SummaryCard
+          label="完了"
+          value={doneCount}
+          color="text-green-600"
+          bg="bg-green-50"
+        />
         <SummaryCard
           label="期限近い"
           value={soonCount}
           color="text-orange-500"
+          bg="bg-orange-50"
         />
       </div>
 
@@ -70,6 +80,7 @@ export default function HomeClient({
               task={task}
               onToggle={handleToggle}
               onStageToggle={handleStageToggle}
+              onDelete={handleDelete}
             />
           ))}
         </section>
@@ -81,12 +92,12 @@ export default function HomeClient({
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
             進行中
           </h2>
-          <a
+          <Link
             href="/tasks"
             className="text-sm text-brand-primary hover:underline"
           >
             すべて見る →
-          </a>
+          </Link>
         </div>
         {activeTasks.map((task) => (
           <TaskCard
@@ -94,6 +105,7 @@ export default function HomeClient({
             task={task}
             onToggle={handleToggle}
             onStageToggle={handleStageToggle}
+            onDelete={handleDelete}
           />
         ))}
       </section>
@@ -105,13 +117,15 @@ function SummaryCard({
   label,
   value,
   color,
+  bg,
 }: {
   label: string;
   value: number;
   color: string;
+  bg: string;
 }) {
   return (
-    <div className="bg-white rounded-xl p-4 text-center border border-gray-100 shadow-sm">
+    <div className={`rounded-xl p-4 text-center ${bg}`}>
       <p className={`text-2xl font-bold ${color}`}>{value}</p>
       <p className="text-xs text-gray-500 mt-1">{label}</p>
     </div>
