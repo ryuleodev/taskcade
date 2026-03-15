@@ -10,7 +10,7 @@ export function rowToTask(row: Record<string, unknown>): Task {
   return {
     id:          row.id as number,
     title:       row.title as string,
-    type:        row.type as string,
+    type:        row.type as 'normal' | 'stage',
     category:    row.category as string,
     note:        row.note as string,
     dueDate:     row.due_date as string | null,
