@@ -1,6 +1,7 @@
 "use client";
 
-import { Task } from "@/types";
+import { useState, useRef } from "react";
+import { Task, Stage } from "@/types";
 import { formatDate, categoryStyle, isOverdue } from "@/lib/utils";
 import Link from "next/link";
 
@@ -17,6 +18,28 @@ export default function TaskCard({
   onStageToggle,
   onDelete,
 }: Props) {
+  const [stages, setStages] = useState<Stage[]>(task.stages ?? []);
+  const dragIndex = useRef<number | null>(null);
+
+  const handleDragStart = (i: number) => {
+    dragIndex.current = i;
+  };
+
+  const handleDrop = async (i: number) => {
+    if (dragIndex.current === null || dragIndex.current === i) return;
+    const next = [...stages];
+    const [moved] = next.splice(dragIndex.current, 1);
+    next.splice(i, 0, moved);
+    setStages(next);
+    dragIndex.current = null;
+
+    await fetch("/api/stages/reorder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stageIds: next.map((s) => s.id) }),
+    });
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-4 m-3 border border-gray-100 hover:shadow-md transition-shadow">
       {/* 1行目：チェック・タイトル・カテゴリ・削除 */}
@@ -103,58 +126,116 @@ export default function TaskCard({
       </div>
 
       {/* ステージタスクのみ */}
-      {task.type === "stage" && task.stages && (
+      {task.type === "stage" && stages.length > 0 && (
         <div className="mt-3 ml-9">
-          {/* 分割プログレスバー */}
-          <div className="flex gap-1 mb-3">
-            {task.stages.map((stage, i) => (
-              <div
-                key={i}
-                className="flex-1 h-1 rounded-full"
-                style={{
-                  backgroundColor: stage.isDone
-                    ? "var(--color-brand-accent)"
-                    : "#E5E7EB",
-                }}
-              />
-            ))}
+          {/* 進捗テキスト + 分割プログレスバー */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs text-gray-400 font-medium whitespace-nowrap">
+              {stages.filter((s) => s.isDone).length}/{stages.length}
+            </span>
+            <div className="flex gap-1 flex-1">
+              {stages.map((stage, i) => (
+                <div
+                  key={i}
+                  className="flex-1 h-1.5 rounded-full transition-colors duration-300"
+                  style={{
+                    backgroundColor: stage.isDone
+                      ? "var(--color-brand-accent)"
+                      : "#E5E7EB",
+                  }}
+                />
+              ))}
+            </div>
           </div>
           {/* ステージ一覧 */}
-          <div className="flex flex-col gap-2 mt-2">
-            <div className="flex flex-col gap-2">
-              {task.stages.map((stage) => (
-                <div key={stage.id} className="flex items-center gap-2">
-                  <button
-                    onClick={() => onStageToggle(stage.id)}
-                    className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer"
+          <div className="flex flex-col gap-1.5">
+            {stages.map((stage, i) => (
+              <div
+                key={stage.id}
+                draggable
+                onDragStart={() => handleDragStart(i)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => handleDrop(i)}
+                className="flex items-center gap-2 rounded-lg transition-colors"
+                style={{
+                  backgroundColor: stage.isDone ? "#f0fdf4" : "#f9fafb",
+                }}
+              >
+                {/* Drag handle */}
+                <span className="pl-2 py-2 cursor-grab active:cursor-grabbing flex flex-col gap-0.5 flex-shrink-0">
+                  <span className="flex gap-0.5">
+                    <span className="w-1 h-1 rounded-full bg-gray-300 block" />
+                    <span className="w-1 h-1 rounded-full bg-gray-300 block" />
+                  </span>
+                  <span className="flex gap-0.5">
+                    <span className="w-1 h-1 rounded-full bg-gray-300 block" />
+                    <span className="w-1 h-1 rounded-full bg-gray-300 block" />
+                  </span>
+                  <span className="flex gap-0.5">
+                    <span className="w-1 h-1 rounded-full bg-gray-300 block" />
+                    <span className="w-1 h-1 rounded-full bg-gray-300 block" />
+                  </span>
+                </span>
+
+                <button
+                  onClick={() => {
+                    onStageToggle(stage.id);
+                    setStages(stages.map((s) =>
+                      s.id === stage.id ? { ...s, isDone: !s.isDone } : s
+                    ));
+                  }}
+                  className="flex items-center gap-3 flex-1 text-left px-2 py-2 cursor-pointer"
+                >
+                  <span
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                     style={{
-                      backgroundColor: stage.isDone ? "#22c55e" : "transparent",
-                      borderColor: stage.isDone ? "#22c55e" : "#d1d5db",
+                      backgroundColor: stage.isDone ? "#22c55e" : "#e5e7eb",
+                      color: stage.isDone ? "white" : "#9ca3af",
                     }}
                   >
-                    {stage.isDone && (
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 12 12"
-                        fill="none"
-                      >
+                    {stage.isDone ? (
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
                         <path
                           d="M2 6l3 3 5-5"
                           stroke="white"
-                          strokeWidth="2"
+                          strokeWidth="2.5"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
                       </svg>
+                    ) : (
+                      i + 1
                     )}
-                  </button>
-                  <span className="text-sm whitespace-nowrap">
-                    {stage.name}
                   </span>
-                </div>
-              ))}
-            </div>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span
+                      className="text-sm"
+                      style={{
+                        color: stage.isDone ? "#16a34a" : "#374151",
+                        textDecoration: stage.isDone ? "line-through" : "none",
+                      }}
+                    >
+                      {stage.name}
+                    </span>
+                    {stage.dueDate && (
+                      <span
+                        className="text-xs mt-0.5 font-medium"
+                        style={{
+                          color: stage.isDone
+                            ? "#86efac"
+                            : isOverdue(stage.dueDate)
+                            ? "#ef4444"
+                            : "#9ca3af",
+                        }}
+                      >
+                        {isOverdue(stage.dueDate) && !stage.isDone && "⚠ "}
+                        {formatDate(stage.dueDate)}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}

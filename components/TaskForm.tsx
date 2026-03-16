@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Task, CATEGORIES } from "@/types";
+
+interface StageInput {
+  name: string;
+  dueDate: string;
+}
 
 interface Props {
   initial?: Task;
@@ -16,9 +21,25 @@ export default function TaskForm({ initial }: Props) {
   const [type, setType] = useState<"normal" | "stage">(
     initial?.type ?? "normal",
   );
-  const [stages, setStages] = useState<string[]>(
-    initial?.stages?.map((s) => s.name) ?? ["", "", ""],
+  const [stages, setStages] = useState<StageInput[]>(
+    initial?.stages?.map((s) => ({ name: s.name, dueDate: s.dueDate ?? "" })) ??
+      [{ name: "", dueDate: "" }, { name: "", dueDate: "" }, { name: "", dueDate: "" }],
   );
+
+  const dragIndex = useRef<number | null>(null);
+
+  const handleDragStart = (i: number) => {
+    dragIndex.current = i;
+  };
+
+  const handleDrop = (i: number) => {
+    if (dragIndex.current === null || dragIndex.current === i) return;
+    const next = [...stages];
+    const [moved] = next.splice(dragIndex.current, 1);
+    next.splice(i, 0, moved);
+    setStages(next);
+    dragIndex.current = null;
+  };
 
   const isEditing = !!initial;
 
@@ -103,30 +124,63 @@ export default function TaskForm({ initial }: Props) {
           <label className="text-sm font-medium text-gray-700">
             ステップの登録
           </label>
-          <div>
+          <div className="flex flex-col gap-2">
             {stages.map((stage, i) => (
-              <div key={i} className="flex gap-2 mb-2">
-                <input
-                  key={i}
-                  value={stage}
-                  onChange={(e) => {
-                    const next = [...stages];
-                    next[i] = e.target.value;
-                    setStages(next);
-                  }}
-                  placeholder={`ステージ ${i + 1}`}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full mb-2"
-                />
+              <div
+                key={i}
+                draggable
+                onDragStart={() => handleDragStart(i)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => handleDrop(i)}
+                className="flex gap-2 items-start p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-grab active:cursor-grabbing"
+              >
+                {/* Drag handle */}
+                <span className="text-gray-400 mt-2.5 select-none leading-none flex flex-col gap-0.5">
+                  <span className="flex gap-0.5">
+                    <span className="w-1 h-1 rounded-full bg-gray-400 block" />
+                    <span className="w-1 h-1 rounded-full bg-gray-400 block" />
+                  </span>
+                  <span className="flex gap-0.5">
+                    <span className="w-1 h-1 rounded-full bg-gray-400 block" />
+                    <span className="w-1 h-1 rounded-full bg-gray-400 block" />
+                  </span>
+                  <span className="flex gap-0.5">
+                    <span className="w-1 h-1 rounded-full bg-gray-400 block" />
+                    <span className="w-1 h-1 rounded-full bg-gray-400 block" />
+                  </span>
+                </span>
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <input
+                    value={stage.name}
+                    onChange={(e) => {
+                      const next = [...stages];
+                      next[i] = { ...next[i], name: e.target.value };
+                      setStages(next);
+                    }}
+                    placeholder={`ステージ ${i + 1}`}
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  />
+                  <input
+                    type="datetime-local"
+                    value={stage.dueDate}
+                    onChange={(e) => {
+                      const next = [...stages];
+                      next[i] = { ...next[i], dueDate: e.target.value };
+                      setStages(next);
+                    }}
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  />
+                </div>
                 <button
                   onClick={() => setStages(stages.filter((_, j) => j !== i))}
-                  className="text-gray-400 hover:text-red-500 transition-colors"
+                  className="text-gray-400 hover:text-red-500 transition-colors mt-2"
                 >
                   ✕
                 </button>
               </div>
             ))}
             <button
-              onClick={() => setStages([...stages, ""])}
+              onClick={() => setStages([...stages, { name: "", dueDate: "" }])}
               className="text-sm text-brand-primary hover:underline"
             >
               + ステージを追加

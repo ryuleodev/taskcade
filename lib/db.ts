@@ -28,5 +28,13 @@ export function rowToStage(row: Record<string, unknown>): Stage {
     name:        row.name as string,
     orderIndex:    row.order_index as number,
     isDone:      row.is_done === 1,
+    dueDate:     row.due_date as string | null ?? null,
   };
 }
+
+// Run once to add due_date column to stages if not exists
+(async () => {
+  try {
+    await db.execute("ALTER TABLE stages ADD COLUMN due_date TEXT");
+  } catch { /* column already exists */ }
+})();

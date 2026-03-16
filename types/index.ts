@@ -18,6 +18,7 @@ export type Stage = {
     name: string;
     orderIndex: number;
     isDone: boolean;
+    dueDate: string | null;
 }
 
 export const CATEGORIES = ['仕事', '勉強', '個人', '家事', '健康', 'その他'] as const;

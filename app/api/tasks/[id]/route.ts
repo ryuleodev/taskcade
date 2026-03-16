@@ -33,9 +33,12 @@ export async function PUT(
   });
 
   for (let i = 0; i < stages.length; i++) {
+    const stage = stages[i];
+    const name = typeof stage === "string" ? stage : stage.name;
+    const dueDate = typeof stage === "string" ? null : (stage.dueDate || null);
     await db.execute({
-      sql: "INSERT INTO stages (task_id, name, order_index) VALUES (?, ?, ?)",
-      args: [Number(id), stages[i], i],
+      sql: "INSERT INTO stages (task_id, name, order_index, due_date) VALUES (?, ?, ?, ?)",
+      args: [Number(id), name, i, dueDate],
     });
   }
 
