@@ -121,9 +121,9 @@ export default function TaskCard({
           </div>
           {/* ステージ一覧 */}
           <div className="flex flex-col gap-2 mt-2">
-            <div className="flex gap-3 mt-3">
+            <div className="flex flex-col gap-2">
               {task.stages.map((stage) => (
-                <div key={stage.id} className="flex items-center gap-1">
+                <div key={stage.id} className="flex items-center gap-2">
                   <button
                     onClick={() => onStageToggle(stage.id)}
                     className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer"
